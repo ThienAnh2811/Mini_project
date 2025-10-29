@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Thêm nhân viên</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="container mt-4">
+<h2>Thêm nhân viên mới</h2>
+
+<form th:action="@{/employees/add}" th:object="${employee}" method="post">
+    <div class="mb-3">
+        <label>Tên nhân viên:</label>
+        <input type="text" class="form-control" th:field="*{name}" required>
+    </div>
+    <div class="mb-3">
+        <label>Email:</label>
+        <input type="email" class="form-control" th:field="*{email}" required>
+    </div>
+    <div class="mb-3">
+        <label>Phòng ban:</label>
+        <select class="form-select" th:field="*{department.id}">
+            <option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}"></option>
+        </select>
+    </div>
+    <button class="btn btn-success">Lưu</button>
+    <a th:href="@{/employees/list}" class="btn btn-secondary">Hủy</a>
+</form>
+</body>
+</html>

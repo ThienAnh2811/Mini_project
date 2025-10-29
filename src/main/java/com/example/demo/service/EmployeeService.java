@@ -34,4 +34,13 @@ public class EmployeeService {
         }
         employeeRepository.deleteById(id);
     }
+    public List<Employee> searchEmployees(String name, String departmentName) {
+        if ((name == null || name.isEmpty()) && (departmentName == null || departmentName.isEmpty())) {
+            return employeeRepository.findAll();
+        }
+        if (departmentName != null && !departmentName.isEmpty()) {
+            return employeeRepository.findByDepartment_NameContainingIgnoreCase(departmentName);
+        }
+        return employeeRepository.findByNameContainingIgnoreCase(name);
+    }
 }
