@@ -1,7 +1,9 @@
 package com.example.demo.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -15,12 +17,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/employees")
-@RequiredArgsConstructor
 public class EmployeeController {
+
     private final EmployeeService employeeService;
+    public EmployeeController(EmployeeService employeeService) {
+        this.employeeService = employeeService;
+    }
 
     @GetMapping
     public ResponseEntity<List<Employee>> getAllEmployees() {
@@ -28,8 +34,24 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public ResponseEntity<Employee> addEmployee(@RequestBody Employee employee) {
-        return ResponseEntity.ok(employeeService.addEmployee(employee));
+    public ResponseEntity<?> createEmployee(
+            @Valid @RequestBody Employee employee,
+            BindingResult result
+    ) {
+        if (result.hasErrors()) {
+            List<String> errors = result.getFieldErrors().stream()
+                    .map(e -> e.getField() + ": " + e.getDefaultMessage())
+                    .collect(Collectors.toList());
+            return ResponseEntity.badRequest().body(errors);
+        }
+
+        return ResponseEntity.ok(employeeService.createEmployee(employee));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Employee> getEmployeeById(@PathVariable Long id) {
+        Employee emp = employeeService.getEmployeeById(id);
+        return emp != null ? ResponseEntity.ok(emp) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")
@@ -38,17 +60,4 @@ public class EmployeeController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<List<Employee>> searchEmployees(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String department
-    ) {
-        if (name != null) {
-            return ResponseEntity.ok(employeeService.searchByName(name));
-        } else if (department != null) {
-            return ResponseEntity.ok(employeeService.searchByDepartment(department));
-        } else {
-            return ResponseEntity.ok(employeeService.getAllEmployees());
-        }
-    }
 }
