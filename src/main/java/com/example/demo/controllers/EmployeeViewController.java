@@ -2,8 +2,12 @@ package com.example.demo.controllers;
 
 import com.example.demo.entity.Department;
 import com.example.demo.service.DepartmentService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,19 +17,17 @@ import com.example.demo.service.EmployeeService;
 
 @Controller
 @RequestMapping("/employees")
+@RequiredArgsConstructor
+@Slf4j
 public class EmployeeViewController {
     private final EmployeeService employeeService;
     private final DepartmentService departmentService;
-
-    public EmployeeViewController(EmployeeService employeeService, DepartmentService departmentService) {
-        this.employeeService = employeeService;
-        this.departmentService = departmentService;
-    }
 
     @GetMapping("/list")
     public String listEmployees(Model model) {
         List<Employee> employees = employeeService.getAllEmployees();
         model.addAttribute("employees", employees);
+        model.addAttribute("departments", departmentService.getAllDepartments()); // thêm để filter/view
         return "employees-list";
     }
 
@@ -37,22 +39,29 @@ public class EmployeeViewController {
     }
 
     @PostMapping("/add")
-    public String addEmployee(@ModelAttribute Employee employee) {
-        if (employee.getDepartment() != null && employee.getDepartment().getId() != null) {
-            Department dept = departmentService.getDepartmentById(employee.getDepartment().getId());
-            employee.setDepartment(dept);
-        } else {
-            employee.setDepartment(null); // hoặc set default dept nếu muốn
+    public String addEmployee(@Valid @ModelAttribute Employee employee, BindingResult bindingResult, Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("departments", departmentService.getAllDepartments());
+            return "employees-add";
         }
-        employeeService.createEmployee(employee);
+
+        try {
+            employeeService.createEmployee(employee);
+        } catch (Exception ex) {
+            bindingResult.reject("globalError", ex.getMessage());
+            model.addAttribute("departments", departmentService.getAllDepartments());
+            return "employees-add";
+        }
         return "redirect:/employees/list";
     }
+
     @GetMapping("/search")
     public String searchEmployees(@RequestParam(required = false) String name,
                                   @RequestParam(required = false) String department,
                                   Model model) {
         List<Employee> employees = employeeService.searchEmployees(name, department);
         model.addAttribute("employees", employees);
+        model.addAttribute("departments", departmentService.getAllDepartments());
         return "employees-search";
     }
 }
